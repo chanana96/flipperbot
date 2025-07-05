@@ -3,6 +3,8 @@ import { Client, Collection } from "discord.js";
 import { commands } from "./commands";
 import { deployCommands } from "./deploy-commands";
 import { ClientWithCommands } from "./types/discord-types";
+import { createCronJob } from "./lib/cron";
+import { getRedisClient } from "./lib/redis";
 
 const client = new Client({
     intents: ["Guilds", "GuildMessages", "DirectMessages"],
@@ -15,6 +17,10 @@ Object.entries(commands).forEach(([name, command]) => {
 
 client.once("ready", async () => {
     await deployCommands({ guildId: DISCORD.GUILD_ID });
+    const redisClient = await getRedisClient();
+    const task = createCronJob();
+    task.start();
+
     console.log("Discord bot is ready! 🤖");
 });
 
