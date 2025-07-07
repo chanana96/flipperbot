@@ -1,5 +1,6 @@
 import { CommandInteraction, SlashCommandBuilder, AutocompleteInteraction } from "discord.js";
 import itemData from "../../public/items-array.json";
+import { getRedisClient } from "../../lib/redis";
 
 export const data = new SlashCommandBuilder()
     .setName("track")
@@ -16,16 +17,25 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
     try {
-        const itemName = interaction.options.get("item")?.value;
-        const buyPrice = interaction.options.get("buy");
-        const sellPrice = interaction.options.get("sell");
-        if (!buyPrice && !sellPrice) {
+        const highTarget = (interaction.options.get("buy")?.value as number) || 0;
+        const lowTarget = (interaction.options.get("sell")?.value as number) || 0;
+        if (!highTarget && !lowTarget) {
             await interaction.reply("You need to enter a buy or sell price!");
             return;
         }
+        const userId = interaction.user.id;
+        const { id, name } = JSON.parse(interaction.options.get("item")?.value as string);
+        const data = {
+            id,
+            name,
+            highTarget,
+            lowTarget,
+        };
 
+        const redis = await getRedisClient();
+        await redis.HSET(userId, `${id}`, JSON.stringify(data));
         await interaction.reply(
-            `${itemName} is now being tracked. You will be notified when it hits ${buyPrice?.value || sellPrice?.value}gp.`,
+            `${name} is now being tracked. You will be notified when it hits ${highTarget || lowTarget} gp.`,
         );
     } catch (e) {
         console.error(e);
@@ -38,6 +48,9 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
         choice.name.toLowerCase().startsWith(focusedValue.toLowerCase()),
     );
     await interaction.respond(
-        filtered.slice(0, 10).map((choice) => ({ name: choice.name, value: `${choice.name}` })),
+        filtered.slice(0, 10).map((choice) => ({
+            name: choice.name,
+            value: `{"name": "${choice.name}", "id": ${choice.id}}`,
+        })),
     );
 }

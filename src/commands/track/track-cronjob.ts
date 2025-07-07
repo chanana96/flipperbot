@@ -29,8 +29,8 @@ const getCurrentPriceForTrackedItems = async ({ trackedItems, response }) => {
 const checkTrackedItems = async ({ trackedItems, response }) => {
     try {
         const filteredItems = trackedItems.filter((item) => {
-            const isHighTarget = item.highTarget !== null;
-            const isLowTarget = item.lowTarget !== null;
+            const isHighTarget = item.highTarget > 0;
+            const isLowTarget = item.lowTarget > 0;
 
             if (isHighTarget && response.get(item.id).high >= item.highTarget!) {
                 return true;

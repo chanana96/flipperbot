@@ -1,23 +1,10 @@
 import { getRedisClient } from "../../lib/redis";
 
-const trackedItems = [
-    {
-        name: "Raw manta ray",
-        id: 389,
-        highTarget: 4000,
-        lowTarget: null,
-    },
-    {
-        name: "Diamond dragon bolts (e)",
-        id: 21946,
-        highTarget: 4400,
-        lowTarget: null,
-    },
-];
-
 export const getTrackedItems = async () => {
     try {
         const redis = await getRedisClient();
+        const itemData = await redis.HGETALL("103826386174644224");
+        const trackedItems = Object.keys(itemData).map((key) => JSON.parse(itemData[key]));
         return trackedItems;
     } catch (e) {
         console.error(e);
